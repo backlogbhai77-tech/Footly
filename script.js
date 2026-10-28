@@ -26,24 +26,6 @@ var loaderTimeoutTimer = null;
 
 var fallbackSvg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22320%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23047857%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23ffffff%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3EFOOTLY%3C%2Ftext%3E%3C%2Fsvg%3E";
 
-function initTheme() {
-  var isDark = localStorage.getItem('footly_dark_mode') === 'true';
-  if (isDark) document.body.classList.add('dark-mode');
-  var btn = document.getElementById('themeToggleBtn');
-  if (btn) btn.innerText = isDark ? '☀️' : '🌙';
-}
-
-var themeBtn = document.getElementById('themeToggleBtn');
-if (themeBtn) {
-  themeBtn.addEventListener('click', function() {
-    document.body.classList.toggle('dark-mode');
-    var isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('footly_dark_mode', isDark);
-    themeBtn.innerText = isDark ? '☀️' : '🌙';
-    if (navigator.vibrate) navigator.vibrate(20);
-  });
-}
-
 function getSavedDrills() {
   try {
     var stored = localStorage.getItem('footly_saved_drills');
@@ -171,10 +153,7 @@ function updateDynamicFilterChips() {
 
 function renderDynamicHomeSections() {
   var container = document.getElementById('homeDynamicSections');
-  var skeleton = document.getElementById('skeletonLoaderSection');
   if (!container) return;
-  if (skeleton) skeleton.style.display = 'none';
-
   container.innerHTML = '';
 
   var shorts = [];
@@ -211,6 +190,7 @@ function renderDynamicHomeSections() {
   });
 }
 
+// ROUTINE VIEW WITH THUMBNAIL PREVIEW & DIRECT PLAY
 function renderRoutineView() {
   var routineList = document.getElementById('routineDrillsList');
   if (!routineList) return;
@@ -225,10 +205,21 @@ function renderRoutineView() {
   routineKeys.forEach(function(key) {
     var item = db[key];
     if (!item) return;
+    var thumbUrl = 'https://i.ytimg.com/vi/' + item.videoId + '/hqdefault.jpg';
+
     var row = document.createElement('div');
-    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--surface); padding:10px 14px; border-radius:12px; border:1px solid var(--border); margin-bottom:8px;";
-    row.innerHTML = '<div><h4 style="font-size:13px; font-weight:800; color:var(--text);">' + item.title + '</h4><p style="font-size:11px; color:var(--accent); font-weight:700;">' + item.cat + '</p></div>' +
-      '<button type="button" onclick="toggleRoutineDrill(\'' + key + '\')" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:8px; font-weight:900; font-size:11px; cursor:pointer;">Remove</button>';
+    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--surface); padding:10px 14px; border-radius:12px; border:1px solid var(--border); margin-bottom:10px; cursor:pointer;";
+    row.addEventListener('click', function() { openDrillModal(key); });
+
+    row.innerHTML = '<div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">' +
+      '<img src="' + thumbUrl + '" style="width:60px; height:40px; object-fit:cover; border-radius:6px; background:var(--card);" alt="Thumb">' +
+      '<div style="flex:1; min-width:0;">' +
+      '<h4 style="font-size:13px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + item.title + '</h4>' +
+      '<p style="font-size:10px; color:var(--accent); font-weight:700; text-transform:uppercase;">' + item.cat + '</p>' +
+      '</div>' +
+      '</div>' +
+      '<button type="button" onclick="toggleRoutineDrill(\'' + key + '\', event)" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:8px; font-weight:900; font-size:11px; cursor:pointer; margin-left:8px;">Remove</button>';
+    
     routineList.appendChild(row);
   });
 }
@@ -484,7 +475,7 @@ function showSwipeToast() {
   setTimeout(function() { toast.style.display = 'none'; }, 1800);
 }
 
-// RESTORED TURF LOADER & SMOOTH VIDEO PLAYER
+// FULLY RESTORED TURF LOADER & FOOTBALL PLAYER ENGINE
 function openDrillModal(drillKey, isNavigating) {
   if (isNavigating === undefined) isNavigating = false;
   var data = db[drillKey];
@@ -657,7 +648,7 @@ function closeModalInternal() {
 // Nav Listeners
 document.getElementById('nav-home').addEventListener('click', function() { navigateTab('home'); });
 document.getElementById('nav-classes').addEventListener('click', function() { navigateTab('classes'); });
-navShorts = document.getElementById('nav-shorts');
+var navShorts = document.getElementById('nav-shorts');
 if (navShorts) navShorts.addEventListener('click', function() { navigateTab('shorts'); });
 document.getElementById('nav-shooting').addEventListener('click', function() { navigateTab('shooting'); });
 document.getElementById('nav-routine').addEventListener('click', function() { navigateTab('routine'); });
@@ -674,6 +665,5 @@ document.getElementById('shorts-save-btn').addEventListener('click', function() 
 document.getElementById('globalSearchInput').addEventListener('input', function(e) { handleGlobalSearch(e.target.value); });
 document.getElementById('searchClearBtn').addEventListener('click', clearGlobalSearch);
 
-initTheme();
 switchMainTabDirect('home');
 setupRealtimeFirestore();
