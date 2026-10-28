@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOOTLY | Secure Admin Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 35%, #c4d7cd 0%, #95b3a0 100%);
+      padding: 16px;
+    }
+    .admin-standalone-card {
+      background: var(--surface);
+      width: 100%;
+      max-width: 460px;
+      border-radius: 22px;
+      padding: 24px;
+      border: 2px solid var(--accent);
+      box-shadow: 0 20px 40px rgba(4, 120, 87, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-standalone-card">
+    
+    <!-- 1. LOGIN SCREEN -->
+    <div id="adminAuthSection">
+      <div class="admin-header-badge">
+        <div class="admin-title-text">FOOT<span>LY</span> ADMIN</div>
+        <span class="badge-pill">SECURE HUB</span>
+      </div>
+      <p style="font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 600;">Enter admin credentials to authenticate.</p>
+      
+      <div class="admin-form-group">
+        <label>Admin Email</label>
+        <input type="email" id="admEmail" placeholder="admin@footly.com" autocomplete="off">
+      </div>
+
+      <div class="admin-form-group">
+        <label>Password</label>
+        <input type="password" id="admPass" placeholder="••••••••" autocomplete="off">
+      </div>
+
+      <div class="admin-btn-row">
+        <button type="button" class="btn-admin-cancel" onclick="window.location.href='index.html'">← Back to App</button>
+        <button type="button" class="btn-admin-submit" id="admLoginBtn">Sign In</button>
+      </div>
+    </div>
+
+    <!-- 2. TABBED DASHBOARD -->
+    <div id="adminDashboardSection" style="display: none;">
+      <div class="admin-header-badge">
+        <div class="admin-title-text">FOOT<span>LY</span> HUB</div>
+        <button type="button" onclick="handleAdminSignOut()" style="background:none; border:none; color:#ef4444; font-size:11px; font-weight:900; cursor:pointer; text-transform:uppercase;">Sign Out ✕</button>
+      </div>
+
+      <!-- TABS NAV -->
+      <div class="admin-nav-chips">
+        <button type="button" class="adm-tab-chip active" data-tab="single">⚡ Add Drill</button>
+        <button type="button" class="adm-tab-chip" data-tab="bulk">📦 Bulk Upload</button>
+        <button type="button" class="adm-tab-chip" data-tab="manage">🗑️ Manage</button>
+      </div>
+
+      <!-- TAB 1: SINGLE DRILL -->
+      <div id="admTab-single" class="admin-tab-view active">
+        <div class="admin-form-group">
+          <label>YouTube Link or Video ID</label>
+          <input type="text" id="admVideoUrl" placeholder="https://youtu.be/... or ID">
+        </div>
+
+        <div class="admin-form-group">
+          <label>Drill Title</label>
+          <input type="text" id="admTitle" placeholder="e.g. Cristiano Knuckleball 2.0">
+        </div>
+
+        <div class="admin-form-group">
+          <label>Custom Category</label>
+          <input type="text" id="admCat" placeholder="e.g. Shooting, Skills, Dribbling...">
+        </div>
+
+        <div class="admin-form-group">
+          <label>Type</label>
+          <select id="admType">
+            <option value="short">Shorts (Vertical)</option>
+            <option value="masterclass">Masterclass (Full Video)</option>
+          </select>
+        </div>
+
+        <div class="admin-form-group">
+          <label>Badge Tag</label>
+          <input type="text" id="admTagPill" placeholder="e.g. POWER, PRO, 1v1">
+        </div>
+
+        <div class="admin-btn-row">
+          <button type="button" class="btn-admin-cancel" onclick="window.location.href='index.html'">Home</button>
+          <button type="button" class="btn-admin-submit" id="admSubmitBtn">Publish to Cloud</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: BULK UPLOAD -->
+      <div id="admTab-bulk" class="admin-tab-view">
+        <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px; font-weight: 600;">
+          Paste 1 line per video: Link | Title | Category | Type
+        </p>
+        <div class="admin-form-group">
+          <textarea id="admBulkText" placeholder="https://youtu.be/xxx | Knuckleball Pro | Shooting | masterclass&#10;https://youtube.com/shorts/yyy | Elastico Quick | Skills | short"></textarea>
+        </div>
+        <div class="admin-btn-row">
+          <button type="button" class="btn-admin-cancel" onclick="window.location.href='index.html'">Home</button>
+          <button type="button" class="btn-admin-submit" id="admBulkSubmitBtn">Push All to Cloud</button>
+        </div>
+      </div>
+
+      <!-- TAB 3: MANAGE & SEARCH DELETE -->
+      <div id="admTab-manage" class="admin-tab-view">
+        <input type="text" id="adminSearchQuery" class="admin-search-input" placeholder="🔍 Search drills to delete...">
+        <div class="admin-items-list" id="adminDrillsList"></div>
+        <div class="admin-btn-row">
+          <button type="button" class="btn-admin-cancel" style="width: 100%;" onclick="window.location.href='index.html'">Back to App</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FIREBASE SCRIPTS -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyCsyMAdibDZ2EUgSH2cFgqdqC9bhY-Aygc",
+      authDomain: "footly-21dd2.firebaseapp.com",
+      projectId: "footly-21dd2",
+      storageBucket: "footly-21dd2.firebasestorage.app",
+      messagingSenderId: "616919026401",
+      appId: "1:616919026401:web:9c401e1378b0d2e2cf05a0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    var firestoreDb = firebase.firestore();
+    var auth = firebase.auth();
+    var db = {};
+
+    var authSection = document.getElementById('adminAuthSection');
+    var dashboardSection = document.getElementById('adminDashboardSection');
+
+    auth.onAuthStateChanged(function(user) {
+      if (user) {
+        authSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+        loadAdminDrills();
+      } else {
+        authSection.style.display = 'block';
+        dashboardSection.style.display = 'none';
+      }
+    });
+
+    var admLoginBtn = document.getElementById('admLoginBtn');
+    if (admLoginBtn) {
+      admLoginBtn.addEventListener('click', function() {
+        var email = document.getElementById('admEmail').value.trim();
+        var pass = document.getElementById('admPass').value.trim();
+        if (!email || !pass) { alert("Enter Email and Password!"); return; }
+
+        admLoginBtn.innerText = "Authenticating...";
+        admLoginBtn.disabled = true;
+
+        auth.signInWithEmailAndPassword(email, pass).catch(function(err) {
+          alert("Login Failed: " + err.message);
+        }).finally(function() {
+          admLoginBtn.innerText = "Sign In";
+          admLoginBtn.disabled = false;
+        });
+      });
+    }
+
+    function handleAdminSignOut() {
+      auth.signOut();
+    }
+
+    document.querySelectorAll('.adm-tab-chip').forEach(function(tabBtn) {
+      tabBtn.addEventListener('click', function() {
+        document.querySelectorAll('.adm-tab-chip').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.admin-tab-view').forEach(function(v) { v.classList.remove('active'); });
+        tabBtn.classList.add('active');
+        var targetTab = document.getElementById('admTab-' + tabBtn.dataset.tab);
+        if (targetTab) targetTab.classList.add('active');
+      });
+    });
+
+    function extractYouTubeID(url) {
+      if (!url) return '';
+      var cleanUrl = url.trim();
+      var regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+      var match = cleanUrl.match(regExp);
+      return (match && match[1]) ? match[1] : cleanUrl.substring(0, 11);
+    }
+
+    var admSubmitBtn = document.getElementById('admSubmitBtn');
+    if (admSubmitBtn) {
+      admSubmitBtn.addEventListener('click', function() {
+        var urlInput = document.getElementById('admVideoUrl').value;
+        var titleInput = document.getElementById('admTitle').value;
+        var catInput = document.getElementById('admCat').value.trim() || 'Skills';
+        var typeInput = document.getElementById('admType').value;
+        var tagPillInput = document.getElementById('admTagPill').value;
+
+        if (!urlInput || !titleInput) { alert("Enter Video URL and Title!"); return; }
+        var videoId = extractYouTubeID(urlInput);
+        if (videoId.length !== 11) { alert("Invalid YouTube URL!"); return; }
+
+        admSubmitBtn.innerText = "Publishing...";
+        admSubmitBtn.disabled = true;
+
+        var isShort = typeInput === 'short';
+        firestoreDb.collection("drills").add({
+          title: titleInput,
+          videoId: videoId,
+          cat: catInput,
+          type: isShort ? 'short' : 'masterclass',
+          tagPill: tagPillInput || (isShort ? 'SHORT' : 'PRO'),
+          tags: [catInput.toLowerCase(), isShort ? 'short' : 'masterclass'],
+          steps: ["Focus on precision & ball control.", "Practice 15 clean repetitions."]
+        }).then(function() {
+          alert("🚀 Drill Published Successfully!");
+          document.getElementById('admVideoUrl').value = '';
+          document.getElementById('admTitle').value = '';
+        }).catch(function(err) {
+          alert("Error: " + err.message);
+        }).finally(function() {
+          admSubmitBtn.innerText = "Publish to Cloud";
+          admSubmitBtn.disabled = false;
+        });
+      });
+    }
+
+    var admBulkSubmitBtn = document.getElementById('admBulkSubmitBtn');
+    if (admBulkSubmitBtn) {
+      admBulkSubmitBtn.addEventListener('click', function() {
+        var rawText = document.getElementById('admBulkText').value.trim();
+        if (!rawText) { alert("Enter bulk data!"); return; }
+
+        var lines = rawText.split('\n').filter(function(l) { return l.trim().length > 0; });
+        var batch = firestoreDb.batch();
+        var count = 0;
+
+        lines.forEach(function(line) {
+          var parts = line.split('|').map(function(p) { return p.trim(); });
+          if (parts.length >= 2) {
+            var url = parts[0];
+            var title = parts[1];
+            var cat = parts[2] || 'Skills';
+            var rawType = (parts[3] || (url.indexOf('/shorts/') !== -1 ? 'short' : 'masterclass')).toLowerCase();
+            var type = rawType.indexOf('short') !== -1 ? 'short' : 'masterclass';
+            var videoId = extractYouTubeID(url);
+
+            if (videoId && videoId.length === 11) {
+              var docRef = firestoreDb.collection("drills").doc();
+              batch.set(docRef, {
+                title: title,
+                videoId: videoId,
+                cat: cat,
+                type: type,
+                tagPill: type === 'short' ? 'SHORT' : 'PRO',
+                tags: [cat.toLowerCase(), type],
+                steps: ["Focus on precision & ball control.", "Practice 15 clean repetitions."]
+              });
+              count++;
+            }
+          }
+        });
+
+        if (count === 0) { alert("No valid lines found!"); return; }
+
+        batch.commit().then(function() {
+          alert("🎉 Uploaded " + count + " drills successfully!");
+          document.getElementById('admBulkText').value = '';
+        }).catch(function(err) {
+          alert("Batch Error: " + err.message);
+        });
+      });
+    }
+
+    function loadAdminDrills(filterQuery) {
+      if (filterQuery === undefined) filterQuery = '';
+      firestoreDb.collection('drills').get().then(function(snap) {
+        db = {};
+        snap.forEach(function(doc) { db[doc.id] = doc.data(); });
+        renderAdminItemsList(filterQuery);
+      });
+    }
+
+    function renderAdminItemsList(filterQuery) {
+      var listEl = document.getElementById('adminDrillsList');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      var keys = Object.keys(db);
+      var q = (filterQuery || '').toLowerCase().trim();
+
+      var matchingKeys = keys.filter(function(k) {
+        var itm = db[k];
+        return itm.title.toLowerCase().indexOf(q) !== -1 || (itm.cat || '').toLowerCase().indexOf(q) !== -1;
+      });
+
+      if (matchingKeys.length === 0) {
+        listEl.innerHTML = '<p style="font-size:11px; color:var(--muted); text-align:center; padding:16px; font-weight:700;">No drills found.</p>';
+        return;
+      }
+
+      matchingKeys.forEach(function(k) {
+        var item = db[k];
+        var row = document.createElement('div');
+        row.className = 'admin-item-row';
+        row.innerHTML = '<div class="admin-item-info">' +
+          '<div class="admin-item-title">' + item.title + '</div>' +
+          '<div class="admin-item-sub">' + item.cat + ' • ' + item.type + '</div>' +
+          '</div>' +
+          '<button type="button" class="btn-item-delete" onclick="deleteDrill(\'' + k + '\')">🗑️ Delete</button>';
+        listEl.appendChild(row);
+      });
+    }
+
+    function deleteDrill(docId) {
+      if (!confirm("Delete this drill?")) return;
+      firestoreDb.collection("drills").doc(docId).delete().then(function() {
+        loadAdminDrills();
+      });
+    }
+
+    var adminSearchQuery = document.getElementById('adminSearchQuery');
+    if (adminSearchQuery) {
+      adminSearchQuery.addEventListener('input', function(e) {
+        loadAdminDrills(e.target.value);
+      });
+    }
+  </script>
+</body>
+</html>
