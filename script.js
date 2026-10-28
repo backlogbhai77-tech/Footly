@@ -1,5 +1,5 @@
 var firebaseConfig = {
-  apiKey: window.ENV_API_KEY || "AIzaSy_YOUR_ACTUAL_API_KEY_HERE",
+  apiKey: "AIzaSyCsyMAdibDZ2EUgSH2cFgqdqC9bhY-Aygc",
   authDomain: "footly-21dd2.firebaseapp.com",
   projectId: "footly-21dd2",
   storageBucket: "footly-21dd2.firebasestorage.app",
@@ -8,11 +8,9 @@ var firebaseConfig = {
 };
 
 var firestoreDb = null;
-var auth = null;
 try {
   firebase.initializeApp(firebaseConfig);
   firestoreDb = firebase.firestore();
-  auth = firebase.auth();
 } catch (e) {
   console.warn("Firebase Init Error:", e);
 }
@@ -20,7 +18,6 @@ try {
 var db = {};
 var allShortKeys = [];
 var currentFilterCat = 'All';
-var isAdminUnlocked = false;
 var activeDrillKey = null;
 var activeDrillType = 'masterclass';
 var lastFocusedElement = null;
@@ -208,7 +205,6 @@ function initFeeds() {
   allShortKeys = Object.keys(db).filter(function(k) { return (db[k].type || '').toLowerCase().indexOf('short') !== -1; });
   updateDynamicFilterChips();
   updateBookmarkIcons();
-  renderAdminItemsList();
 }
 
 function setupRealtimeFirestore() {
@@ -341,14 +337,6 @@ function switchMainTabDirect(tabName) {
 
 window.addEventListener('popstate', function(e) {
   var modal = document.getElementById('video-modal');
-  var admModal = document.getElementById('adminModal');
-
-  if (window.location.hash === '#admin') {
-    openAdminAuthModal();
-  } else {
-    if (admModal && admModal.classList.contains('active')) admModal.classList.remove('active');
-  }
-
   if (modal && modal.classList.contains('active')) {
     closeModalInternal();
   } else if (e.state && e.state.tab) {
@@ -620,262 +608,6 @@ function closeModalInternal() {
   if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
 }
 
-var adminModal = document.getElementById('adminModal');
-var authSection = document.getElementById('adminAuthSection');
-var dashboardSection = document.getElementById('adminDashboardSection');
-
-function openAdminAuthModal() {
-  if (!isAdminUnlocked) {
-    authSection.style.display = 'block';
-    dashboardSection.style.display = 'none';
-  } else {
-    authSection.style.display = 'none';
-    dashboardSection.style.display = 'block';
-    renderAdminItemsList();
-  }
-  adminModal.classList.add('active');
-}
-
-function closeAdminModal() {
-  adminModal.classList.remove('active');
-  if (window.location.hash === '#admin') {
-    history.replaceState({ tab: 'home' }, '', '#home');
-  }
-}
-
-var admLoginBtn = document.getElementById('admLoginBtn');
-if (admLoginBtn) {
-  admLoginBtn.addEventListener('click', function() {
-    var email = document.getElementById('admEmail').value.trim();
-    var pass = document.getElementById('admPass').value.trim();
-
-    if (!email || !pass) {
-      alert("Please enter both Email and Password!");
-      return;
-    }
-
-    admLoginBtn.innerText = "Authenticating...";
-    admLoginBtn.disabled = true;
-
-    auth.signInWithEmailAndPassword(email, pass).then(function() {
-      isAdminUnlocked = true;
-      document.getElementById('admEmail').value = '';
-      document.getElementById('admPass').value = '';
-      authSection.style.display = 'none';
-      dashboardSection.style.display = 'block';
-      renderAdminItemsList();
-    }).catch(function(err) {
-      alert("Authentication Failed: " + err.message);
-    }).finally(function() {
-      admLoginBtn.innerText = "Sign In";
-      admLoginBtn.disabled = false;
-    });
-  });
-}
-
-function handleAdminSignOut() {
-  if (auth) {
-    auth.signOut().then(function() {
-      isAdminUnlocked = false;
-      authSection.style.display = 'block';
-      dashboardSection.style.display = 'none';
-      closeAdminModal();
-    });
-  }
-}
-
-document.querySelectorAll('.adm-tab-chip').forEach(function(tabBtn) {
-  tabBtn.addEventListener('click', function() {
-    document.querySelectorAll('.adm-tab-chip').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.admin-tab-view').forEach(function(v) { v.classList.remove('active'); });
-    
-    tabBtn.classList.add('active');
-    var targetTab = document.getElementById('admTab-' + tabBtn.dataset.tab);
-    if (targetTab) targetTab.classList.add('active');
-  });
-});
-
-function extractYouTubeID(url) {
-  if (!url) return '';
-  var cleanUrl = url.trim();
-  var regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-  var match = cleanUrl.match(regExp);
-  return (match && match[1]) ? match[1] : cleanUrl.substring(0, 11);
-}
-
-var admSubmitBtn = document.getElementById('admSubmitBtn');
-if (admSubmitBtn) {
-  admSubmitBtn.addEventListener('click', function() {
-    if (!auth || !auth.currentUser || !isAdminUnlocked) {
-      alert("Unauthorized access!");
-      return;
-    }
-
-    var urlInput = document.getElementById('admVideoUrl').value;
-    var titleInput = document.getElementById('admTitle').value;
-    var catInput = document.getElementById('admCat').value.trim() || 'Skills';
-    var typeInput = document.getElementById('admType').value;
-    var tagPillInput = document.getElementById('admTagPill').value;
-
-    if (!urlInput || !titleInput) {
-      alert("Please enter Video URL and Title!");
-      return;
-    }
-
-    var videoId = extractYouTubeID(urlInput);
-    if (videoId.length !== 11) {
-      alert("Invalid YouTube URL! Please provide a valid YouTube link.");
-      return;
-    }
-
-    admSubmitBtn.innerText = "Publishing...";
-    admSubmitBtn.disabled = true;
-
-    var isShort = typeInput === 'short';
-    var newDrillData = {
-      title: titleInput,
-      videoId: videoId,
-      cat: catInput,
-      type: isShort ? 'short' : 'masterclass',
-      tagPill: tagPillInput || (isShort ? 'SHORT' : 'PRO'),
-      tags: [catInput.toLowerCase(), isShort ? 'short' : 'masterclass'],
-      steps: ["Focus on precision & ball control.", "Practice 15 clean repetitions."]
-    };
-
-    firestoreDb.collection("drills").add(newDrillData).then(function() {
-      alert("🚀 Drill successfully published to Cloud!");
-      document.getElementById('admVideoUrl').value = '';
-      document.getElementById('admTitle').value = '';
-      document.getElementById('admCat').value = '';
-      document.getElementById('admTagPill').value = '';
-    }).catch(function(err) {
-      alert("Publish Error: " + err.message);
-    }).finally(function() {
-      admSubmitBtn.innerText = "Publish to Cloud";
-      admSubmitBtn.disabled = false;
-    });
-  });
-}
-
-var admBulkSubmitBtn = document.getElementById('admBulkSubmitBtn');
-if (admBulkSubmitBtn) {
-  admBulkSubmitBtn.addEventListener('click', function() {
-    if (!auth || !auth.currentUser || !isAdminUnlocked) {
-      alert("Unauthorized access!");
-      return;
-    }
-
-    var rawText = document.getElementById('admBulkText').value.trim();
-    if (!rawText) {
-      alert("Please enter bulk data!");
-      return;
-    }
-
-    var lines = rawText.split('\n').filter(function(l) { return l.trim().length > 0; });
-    admBulkSubmitBtn.innerText = "Processing Batch...";
-    admBulkSubmitBtn.disabled = true;
-
-    var batch = firestoreDb.batch();
-    var count = 0;
-
-    lines.forEach(function(line) {
-      var parts = line.split('|').map(function(p) { return p.trim(); });
-      if (parts.length >= 2) {
-        var url = parts[0];
-        var title = parts[1];
-        var cat = parts[2] || 'Skills';
-        var rawType = (parts[3] || (url.indexOf('/shorts/') !== -1 ? 'short' : 'masterclass')).toLowerCase();
-        var type = rawType.indexOf('short') !== -1 ? 'short' : 'masterclass';
-        var videoId = extractYouTubeID(url);
-
-        if (videoId && videoId.length === 11) {
-          var docRef = firestoreDb.collection("drills").doc();
-          batch.set(docRef, {
-            title: title,
-            videoId: videoId,
-            cat: cat,
-            type: type,
-            tagPill: type === 'short' ? 'SHORT' : 'PRO',
-            tags: [cat.toLowerCase(), type],
-            steps: ["Focus on precision & ball control.", "Practice 15 clean repetitions."]
-          });
-          count++;
-        }
-      }
-    });
-
-    if (count === 0) {
-      alert("No valid lines! Format: URL | Title | Category | Type");
-      admBulkSubmitBtn.innerText = "Push All to Cloud";
-      admBulkSubmitBtn.disabled = false;
-      return;
-    }
-
-    batch.commit().then(function() {
-      alert("🎉 Successfully uploaded " + count + " drills to Cloud!");
-      document.getElementById('admBulkText').value = '';
-    }).catch(function(err) {
-      alert("Bulk Upload Error: " + err.message);
-    }).finally(function() {
-      admBulkSubmitBtn.innerText = "Push All to Cloud";
-      admBulkSubmitBtn.disabled = false;
-    });
-  });
-}
-
-function renderAdminItemsList(filterQuery) {
-  if (filterQuery === undefined) filterQuery = '';
-  var listEl = document.getElementById('adminDrillsList');
-  if (!listEl) return;
-
-  listEl.innerHTML = '';
-  var keys = Object.keys(db);
-  var q = filterQuery.toLowerCase().trim();
-
-  var matchingKeys = keys.filter(function(k) {
-    var itm = db[k];
-    return itm.title.toLowerCase().indexOf(q) !== -1 || (itm.cat || '').toLowerCase().indexOf(q) !== -1;
-  });
-
-  if (matchingKeys.length === 0) {
-    listEl.innerHTML = '<p style="font-size:11px; color:var(--muted); text-align:center; padding:16px; font-weight:700;">No matching drills found.</p>';
-    return;
-  }
-
-  matchingKeys.forEach(function(k) {
-    var item = db[k];
-    var row = document.createElement('div');
-    row.className = 'admin-item-row';
-    row.innerHTML = '<div class="admin-item-info">' +
-      '<div class="admin-item-title">' + item.title + '</div>' +
-      '<div class="admin-item-sub">' + item.cat + ' • ' + item.type + '</div>' +
-      '</div>' +
-      '<button type="button" class="btn-item-delete" onclick="deleteDrillFromCloud(\'' + k + '\')">🗑️ Delete</button>';
-    listEl.appendChild(row);
-  });
-}
-
-var adminSearchQuery = document.getElementById('adminSearchQuery');
-if (adminSearchQuery) {
-  adminSearchQuery.addEventListener('input', function(e) {
-    renderAdminItemsList(e.target.value);
-  });
-}
-
-function deleteDrillFromCloud(docId) {
-  if (!auth || !auth.currentUser || !isAdminUnlocked) {
-    alert("Unauthorized access!");
-    return;
-  }
-  if (!confirm("Are you sure you want to delete this drill from Cloud?")) return;
-
-  firestoreDb.collection("drills").doc(docId).delete().then(function() {
-    alert("Drill deleted successfully!");
-  }).catch(function(err) {
-    alert("Delete failed: " + err.message);
-  });
-}
-
 var globalSearchInput = document.getElementById('globalSearchInput');
 if (globalSearchInput) {
   globalSearchInput.addEventListener('input', function(e) { handleGlobalSearch(e.target.value); });
@@ -913,12 +645,11 @@ if (fullscreenExitBtn) fullscreenExitBtn.addEventListener('click', closeModal);
 var shortsPrevBtn = document.getElementById('shorts-prev-btn');
 if (shortsPrevBtn) shortsPrevBtn.addEventListener('click', navigatePrevShort);
 
-var shortsNextBtn = document.getElementById('shorts.next-btn');
+var shortsNextBtn = document.getElementById('shorts-next-btn');
 if (shortsNextBtn) shortsNextBtn.addEventListener('click', navigateNextShort);
 
 var shortsSaveBtn = document.getElementById('shorts-save-btn');
 if (shortsSaveBtn) shortsSaveBtn.addEventListener('click', toggleSaveCurrentDrill);
 
-if (window.location.hash === '#admin') openAdminAuthModal();
 switchMainTabDirect('home');
 setupRealtimeFirestore();
