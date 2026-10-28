@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FOOTLY | Master The Pitch</title>
+  
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="preconnect" href="https://i.ytimg.com">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="lock-scroll">
+
+  <!-- SPLASH LAYER -->
+  <div id="splash-layer" aria-label="Intro animation">
+    <div class="strike-arc"></div>
+    <div class="impact-ring"></div>
+    <div class="impact-flash" id="impactFlash" aria-hidden="true"></div>
+
+    <div class="striker-stage" aria-hidden="true">
+      <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="96" cy="42" r="9" fill="#0f172a"/>
+        <path d="M90 35 C92 32, 102 30, 106 36 C104 38, 98 42, 90 40 Z" fill="#047857"/>
+        <path d="M88 50 L108 52 C106 68, 94 76, 78 78 L72 64 C76 58, 82 52, 88 50 Z" fill="#0f172a"/>
+        <path d="M106 53 L124 44 C126 43, 130 46, 126 49 L112 62 Z" fill="#334155"/>
+        <path d="M84 52 L62 58 C58 60, 56 56, 60 52 L78 45 Z" fill="#334155"/>
+        <path d="M78 78 L60 84 L54 102 L70 98 L76 82 Z" fill="#adc4b5" stroke="#047857" stroke-width="1.5"/>
+        <path d="M56 100 L42 116 L28 110 C24 108, 25 102, 30 102 L46 108 L56 94 Z" fill="#334155"/>
+        <path d="M28 110 L20 108 L22 114 L28 112 Z" fill="#0f172a"/>
+        <g class="kicking-leg-group">
+          <path d="M74 80 L96 98 L126 122 L138 116 C144 110, 142 104, 132 108 L110 90 L82 74 Z" fill="#0f172a"/>
+          <path d="M138 116 L148 114 L146 122 L136 124 Z" fill="#047857"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="ball-stage" id="ballStage" aria-hidden="true">
+      <div class="ball-half half-left">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+          <polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>
+          <polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+          <polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>
+          <polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>
+          <polygon points="34,86 50,96 66,86 59,68 41,68" fill="#0f172a"/>
+        </svg>
+      </div>
+      <div class="ball-half half-right">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+          <polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>
+          <polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+          <polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>
+          <polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>
+          <polygon points="34,86 50,96 66,86 59,68 41,68" fill="#0f172a"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="brand-core-reveal" id="brandReveal" aria-hidden="true">
+      <div class="monogram-badge"><span>F</span></div>
+      <div class="splash-app-title">FOOT<span>LY</span></div>
+      <div class="splash-tag">// FOOTBALL MASTERY //</div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">FOOT<span>LY</span></div>
+      <span class="badge-pill">PRO LAB</span>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
+      <input type="text" id="globalSearchInput" class="search-input" placeholder="Search skills, shooting, CR7, Neymar...">
+      <button type="button" id="searchClearBtn" class="search-clear-btn">✕</button>
+    </div>
+  </header>
+
+  <!-- VIEW 1: SEARCH RESULTS -->
+  <div id="view-search" class="app-view">
+    <div id="search-shorts-section" style="display: none;">
+      <div class="section-head"><h3>⚡ Quick Shorts</h3></div>
+      <div class="horizontal-reel" id="search-shorts-results"></div>
+    </div>
+    <div id="search-classes-section" style="display: none;">
+      <div class="section-head"><h3>🎬 Full Masterclasses</h3></div>
+      <div class="view-reel-container" id="search-classes-results"></div>
+    </div>
+    <div id="search-no-results" style="display: none; text-align: center; padding: 40px 20px; color: var(--muted);">
+      <p style="font-size: 14px; font-weight: 700;">No drills found for this search.</p>
+    </div>
+  </div>
+
+  <!-- VIEW 2: HOME -->
+  <div id="view-home" class="app-view active">
+    <div class="filter-chips" id="dynamicFilterChips" role="group">
+      <button type="button" class="chip" data-category="All" aria-pressed="true">All Topics</button>
+      <button type="button" class="chip" data-category="Saved" aria-pressed="false">❤️ Saved</button>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-container" id="dynamicHeroContainer">
+      <button type="button" class="hero-poster-card" id="heroCardBtn">
+        <div class="hero-poster-thumb">
+          <img id="heroPosterImg" src="https://i.ytimg.com/vi/6mFfS1PE3Vo/hqdefault.jpg" alt="Hero Poster">
+        </div>
+        <div class="hero-poster-footer">
+          <div class="hero-poster-meta">
+            <div class="hero-tag" id="heroCategoryTag">⚡ RECOMMENDED FOR YOU</div>
+            <h2 class="hero-title" id="heroMainTitle">Featured Drill</h2>
+          </div>
+          <span class="btn-play-hero">Watch</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- DYNAMIC HOME SECTIONS -->
+    <div id="homeDynamicSections"></div>
+  </div>
+
+  <!-- VIEW 3: CLASSES -->
+  <div id="view-classes" class="app-view">
+    <div class="section-head"><h3>All Masterclasses & Full Guides</h3></div>
+    <div class="view-reel-container" id="classes-feed"></div>
+  </div>
+
+  <!-- VIEW 4: SHORTS -->
+  <div id="view-shorts" class="app-view">
+    <div class="section-head"><h3>All Quick Shorts</h3><span>Micro Drills</span></div>
+    <div class="shorts-grid-2col" id="shorts-feed"></div>
+  </div>
+
+  <!-- VIEW 5: SHOOTING LAB -->
+  <div id="view-shooting" class="app-view">
+    <div class="section-head"><h3>Striking & Finishing Lab</h3></div>
+    <div class="view-reel-container" id="shoot-feed"></div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav class="bottom-nav" aria-label="Primary Navigation">
+    <button type="button" class="nav-item" id="nav-home" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </button>
+    <button type="button" class="nav-item" id="nav-classes">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#000" stroke-width="2"/></svg>
+      <span>Classes</span>
+    </button>
+    <button type="button" class="nav-item" id="nav-shorts">
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>Shorts</span>
+    </button>
+    <button type="button" class="nav-item" id="nav-shooting">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="2" r="2"/></svg>
+      <span>Shooting</span>
+    </button>
+  </nav>
+
+  <!-- MODAL PLAYER -->
+  <div id="video-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-sheet" id="modalSheetEl">
+      <div class="modal-header-row">
+        <h2 id="modal-title" style="font-size: 18px; font-weight: 900; font-style: italic; text-transform: uppercase;">
+          Drill Name
+        </h2>
+        <div class="modal-actions">
+          <button type="button" class="btn-action-round" id="modal-save-btn" aria-label="Save Drill">🤍</button>
+          <button type="button" class="btn-action-round" id="modal-fs-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+          <button type="button" class="btn-action-round" id="modal-close-btn" aria-label="Close">✕</button>
+        </div>
+      </div>
+      <div class="video-frame-box" id="video-box"></div>
+      <div class="steps-container" id="steps-box">
+        <h4>Key Coaching Points:</h4>
+        <ol id="modal-steps"></ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING CONTROLS FOR SHORTS -->
+  <div class="shorts-floating-nav" id="shortsFloatingNav">
+    <button type="button" class="shorts-nav-btn" id="shorts-prev-btn" title="Previous Short">▲</button>
+    <button type="button" class="shorts-nav-btn" id="shorts-next-btn" title="Next Short">▼</button>
+    <button type="button" class="shorts-nav-btn" id="shorts-save-btn" title="Bookmark">🤍</button>
+  </div>
+
+  <div class="swipe-nav-toast" id="swipeToast">Swipe ⇄ or Use Buttons to Switch</div>
+  <button type="button" id="fullscreen-exit-btn" aria-label="Exit Fullscreen">✕</button>
+
+  <!-- SECURE TABBED ADMIN HUB -->
+  <div class="admin-modal" id="adminModal">
+    <div class="admin-card">
+      
+      <!-- 1. LOGIN SCREEN -->
+      <div id="adminAuthSection">
+        <div class="admin-header-badge">
+          <div class="admin-title-text">FOOT<span>LY</span> ADMIN</div>
+          <span class="badge-pill">SECURE LOCK</span>
+        </div>
+        <p style="font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600;">Enter admin credentials to authenticate.</p>
+        
+        <div class="admin-form-group">
+          <label>Admin Email</label>
+          <input type="email" id="admEmail" placeholder="admin@footly.com" autocomplete="off">
+        </div>
+
+        <div class="admin-form-group">
+          <label>Password</label>
+          <input type="password" id="admPass" placeholder="••••••••" autocomplete="off">
+        </div>
+
+        <div class="admin-btn-row">
+          <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Cancel</button>
+          <button type="button" class="btn-admin-submit" id="admLoginBtn">Sign In</button>
+        </div>
+      </div>
+
+      <!-- 2. TABBED DASHBOARD -->
+      <div id="adminDashboardSection" style="display: none;">
+        <div class="admin-header-badge">
+          <div class="admin-title-text">FOOT<span>LY</span> HUB</div>
+          <button type="button" onclick="handleAdminSignOut()" style="background:none; border:none; color:#ef4444; font-size:11px; font-weight:900; cursor:pointer; text-transform:uppercase;">Sign Out ✕</button>
+        </div>
+
+        <!-- TABS NAV -->
+        <div class="admin-nav-chips">
+          <button type="button" class="adm-tab-chip active" data-tab="single">⚡ Add Drill</button>
+          <button type="button" class="adm-tab-chip" data-tab="bulk">📦 Bulk Upload</button>
+          <button type="button" class="adm-tab-chip" data-tab="manage">🗑️ Manage</button>
+        </div>
+
+        <!-- TAB 1: SINGLE DRILL -->
+        <div id="admTab-single" class="admin-tab-view active">
+          <div class="admin-form-group">
+            <label>YouTube Link or Video ID</label>
+            <input type="text" id="admVideoUrl" placeholder="https://youtu.be/... or ID">
+          </div>
+
+          <div class="admin-form-group">
+            <label>Drill Title</label>
+            <input type="text" id="admTitle" placeholder="e.g. Cristiano Knuckleball 2.0">
+          </div>
+
+          <div class="admin-form-group">
+            <label>Custom Category</label>
+            <input type="text" id="admCat" placeholder="e.g. Shooting, Skills, Dribbling...">
+          </div>
+
+          <div class="admin-form-group">
+            <label>Type</label>
+            <select id="admType">
+              <option value="short">Shorts (Vertical)</option>
+              <option value="masterclass">Masterclass (Full Video)</option>
+            </select>
+          </div>
+
+          <div class="admin-form-group">
+            <label>Badge Tag</label>
+            <input type="text" id="admTagPill" placeholder="e.g. POWER, PRO, 1v1">
+          </div>
+
+          <div class="admin-btn-row">
+            <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Close</button>
+            <button type="button" class="btn-admin-submit" id="admSubmitBtn">Publish to Cloud</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: BULK UPLOAD -->
+        <div id="admTab-bulk" class="admin-tab-view">
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px; font-weight: 600;">
+            Paste 1 line per video: Link | Title | Category | Type
+          </p>
+          <div class="admin-form-group">
+            <textarea id="admBulkText" placeholder="https://youtu.be/xxx | Knuckleball Pro | Shooting | masterclass&#10;https://youtube.com/shorts/yyy | Elastico Quick | Skills | short"></textarea>
+          </div>
+          <div class="admin-btn-row">
+            <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Close</button>
+            <button type="button" class="btn-admin-submit" id="admBulkSubmitBtn">Push All to Cloud</button>
+          </div>
+        </div>
+
+        <!-- TAB 3: MANAGE & SEARCH DELETE -->
+        <div id="admTab-manage" class="admin-tab-view">
+          <input type="text" id="adminSearchQuery" class="admin-search-input" placeholder="🔍 Search drills to delete...">
+          <div class="admin-items-list" id="adminDrillsList"></div>
+          <div class="admin-btn-row">
+            <button type="button" class="btn-admin-cancel" style="width: 100%;" onclick="closeAdminModal()">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE SCRIPTS -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- CUSTOM JAVASCRIPT -->
+  <script src="script.js"></script>
+</body>
+</html>
