@@ -15,7 +15,9 @@ try {
   console.warn("Firebase Init Error:", e);
 }
 
-var db = {};
+// Load cached DB instantly if available
+var cachedData = localStorage.getItem('footly_offline_db');
+var db = cachedData ? JSON.parse(cachedData) : {};
 var allShortKeys = [];
 var currentFilterCat = 'All';
 var activeDrillKey = null;
@@ -25,11 +27,50 @@ var loaderTimeoutTimer = null;
 
 var fallbackSvg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22320%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23047857%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23ffffff%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3EFOOTLY%3C%2Ftext%3E%3C%2Fsvg%3E";
 
+// Dark Mode Initialization
+function initTheme() {
+  var isDark = localStorage.getItem('footly_dark_mode') === 'true';
+  if (isDark) document.body.classList.add('dark-mode');
+  var btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.innerText = isDark ? '☀️' : '🌙';
+}
+
+var themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) {
+  themeBtn.addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
+    var isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('footly_dark_mode', isDark);
+    themeBtn.innerText = isDark ? '☀️' : '🌙';
+    if (navigator.vibrate) navigator.vibrate(20);
+  });
+}
+
 function getSavedDrills() {
   try {
     var stored = localStorage.getItem('footly_saved_drills');
     return stored ? JSON.parse(stored) : [];
   } catch (err) { return []; }
+}
+
+function getRoutineDrills() {
+  try {
+    var stored = localStorage.getItem('footly_routine_drills');
+    return stored ? JSON.parse(stored) : [];
+  } catch (err) { return []; }
+}
+
+function toggleRoutineDrill(drillKey, ev) {
+  if (ev) ev.stopPropagation();
+  var routine = getRoutineDrills();
+  if (routine.indexOf(drillKey) !== -1) {
+    routine = routine.filter(function(k) { return k !== drillKey; });
+  } else {
+    routine.push(drillKey);
+  }
+  localStorage.setItem('footly_routine_drills', JSON.stringify(routine));
+  renderRoutineView();
+  if (navigator.vibrate) navigator.vibrate(25);
 }
 
 function toggleSaveDrill(drillKey, ev) {
@@ -42,6 +83,7 @@ function toggleSaveDrill(drillKey, ev) {
   }
   localStorage.setItem('footly_saved_drills', JSON.stringify(saved));
   updateBookmarkIcons();
+  if (navigator.vibrate) navigator.vibrate(25);
 }
 
 function updateBookmarkIcons() {
@@ -56,27 +98,6 @@ function updateBookmarkIcons() {
       btn.innerText = '🤍';
     }
   });
-  if (activeDrillKey) {
-    var icon = saved.indexOf(activeDrillKey) !== -1 ? '❤️' : '🤍';
-    var modalSave = document.getElementById('modal-save-btn');
-    var shortsSave = document.getElementById('shorts-save-btn');
-    if (modalSave) modalSave.innerText = icon;
-    if (shortsSave) shortsSave.innerText = icon;
-  }
-}
-
-function toggleSaveCurrentDrill() {
-  if (activeDrillKey) toggleSaveDrill(activeDrillKey);
-}
-
-function handleThumbError(imgEl) {
-  var currentSrc = imgEl.src;
-  if (currentSrc.indexOf('hqdefault.jpg') !== -1) {
-    imgEl.src = currentSrc.replace('hqdefault.jpg', '0.jpg');
-  } else {
-    imgEl.src = fallbackSvg;
-    imgEl.onerror = null;
-  }
 }
 
 function createCard(key, item, isShort, isFullWidth) {
@@ -106,7 +127,7 @@ function createCard(key, item, isShort, isFullWidth) {
   btn.innerHTML = html;
 
   var img = btn.querySelector('img');
-  if (img) img.addEventListener('error', function() { handleThumbError(img); });
+  if (img) img.addEventListener('error', function() { img.src = fallbackSvg; });
 
   var bkmk = btn.querySelector('.bookmark-btn');
   if (bkmk) bkmk.addEventListener('click', function(e) { toggleSaveDrill(key, e); });
@@ -118,12 +139,16 @@ function updateDynamicFilterChips() {
   var chipBox = document.getElementById('dynamicFilterChips');
   if (!chipBox) return;
 
+  var counts = { All: Object.keys(db).length, Saved: getSavedDrills().length };
+  Object.keys(db).forEach(function(k) {
+    var c = db[k].cat;
+    if (c) counts[c] = (counts[c] || 0) + 1;
+  });
+
   var categories = ['All', 'Saved'];
   Object.keys(db).forEach(function(k) {
     var c = db[k].cat;
-    if (c && categories.indexOf(c) === -1) {
-      categories.push(c);
-    }
+    if (c && categories.indexOf(c) === -1) categories.push(c);
   });
 
   chipBox.innerHTML = '';
@@ -133,7 +158,8 @@ function updateDynamicFilterChips() {
     btn.className = 'chip';
     btn.dataset.category = cat;
     btn.setAttribute('aria-pressed', currentFilterCat === cat ? 'true' : 'false');
-    btn.innerText = cat === 'Saved' ? '❤️ Saved' : (cat === 'All' ? 'All Topics' : cat);
+    var label = cat === 'Saved' ? '❤️ Saved' : (cat === 'All' ? 'All Topics' : cat);
+    btn.innerText = label + ' (' + (counts[cat] || 0) + ')';
     btn.addEventListener('click', function() { applyHomeFilter(cat); });
     chipBox.appendChild(btn);
   });
@@ -141,7 +167,10 @@ function updateDynamicFilterChips() {
 
 function renderDynamicHomeSections() {
   var container = document.getElementById('homeDynamicSections');
+  var skeleton = document.getElementById('skeletonLoaderSection');
   if (!container) return;
+  if (skeleton) skeleton.style.display = 'none';
+
   container.innerHTML = '';
 
   var shorts = [];
@@ -178,6 +207,28 @@ function renderDynamicHomeSections() {
   });
 }
 
+function renderRoutineView() {
+  var routineList = document.getElementById('routineDrillsList');
+  if (!routineList) return;
+  routineList.innerHTML = '';
+
+  var routineKeys = getRoutineDrills();
+  if (routineKeys.length === 0) {
+    routineList.innerHTML = '<p style="font-size: 13px; color: var(--muted); padding: 10px 0;">No drills in your routine yet. Add masterclasses here!</p>';
+    return;
+  }
+
+  routineKeys.forEach(function(key) {
+    var item = db[key];
+    if (!item) return;
+    var row = document.createElement('div');
+    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--surface); padding:10px 14px; border-radius:12px; border:1px solid var(--border);";
+    row.innerHTML = '<div><h4 style="font-size:13px; font-weight:800;">' + item.title + '</h4><p style="font-size:11px; color:var(--accent);">' + item.cat + '</p></div>' +
+      '<button type="button" onclick="toggleRoutineDrill(\'' + key + '\')" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:8px; font-weight:900; font-size:11px; cursor:pointer;">Remove</button>';
+    routineList.appendChild(row);
+  });
+}
+
 function initFeeds() {
   var classesFeed = document.getElementById('classes-feed');
   var shortsFeed = document.getElementById('shorts-feed');
@@ -188,6 +239,7 @@ function initFeeds() {
   if (shootFeed) shootFeed.innerHTML = '';
 
   renderDynamicHomeSections();
+  renderRoutineView();
 
   Object.keys(db).forEach(function(k) {
     var item = db[k];
@@ -208,7 +260,10 @@ function initFeeds() {
 }
 
 function setupRealtimeFirestore() {
-  if (!firestoreDb) return;
+  if (!firestoreDb) {
+    if (Object.keys(db).length > 0) initFeeds();
+    return;
+  }
   firestoreDb.collection('drills').onSnapshot(function(snap) {
     var cloudDb = {};
     snap.forEach(function(doc) {
@@ -228,6 +283,7 @@ function setupRealtimeFirestore() {
     });
 
     db = cloudDb;
+    localStorage.setItem('footly_offline_db', JSON.stringify(db));
     initFeeds();
 
     var keys = Object.keys(db);
@@ -236,14 +292,14 @@ function setupRealtimeFirestore() {
       updateHeroDisplay(latestMasterclass);
     }
   }, function(err) {
-    console.warn("Realtime Firestore listener error:", err);
+    console.warn("Firestore sync error, using cache:", err);
+    if (Object.keys(db).length > 0) initFeeds();
   });
 }
 
 function updateHeroDisplay(drillKey) {
   var drill = db[drillKey];
   if (!drill) return;
-
   var container = document.getElementById('dynamicHeroContainer');
   var cardBtn = document.getElementById('heroCardBtn');
   var img = document.getElementById('heroPosterImg');
@@ -259,7 +315,6 @@ function updateHeroDisplay(drillKey) {
 
 var lockCount = 0;
 var savedScrollY = 0;
-
 function pushScrollLock() {
   if (lockCount === 0) {
     savedScrollY = window.scrollY || window.pageYOffset;
@@ -268,7 +323,6 @@ function pushScrollLock() {
   }
   lockCount++;
 }
-
 function popScrollLock() {
   lockCount = Math.max(0, lockCount - 1);
   if (lockCount === 0) {
@@ -285,7 +339,6 @@ function popScrollLock() {
   var impactFlash = document.getElementById('impactFlash');
 
   pushScrollLock();
-
   function onBallEnd(e) {
     if (e.target !== ballStage) return;
     if (splash) splash.classList.add('impact-shake');
@@ -299,7 +352,6 @@ function popScrollLock() {
     if (brandReveal) brandReveal.classList.add('popped');
     setTimeout(finishSplash, 400);
   }
-
   function finishSplash() {
     if (splash) splash.classList.add('zoom-transition');
     setTimeout(function() {
@@ -307,13 +359,11 @@ function popScrollLock() {
       popScrollLock();
     }, 350);
   }
-
   if (ballStage) ballStage.addEventListener('animationend', onBallEnd);
   setTimeout(finishSplash, 2600);
 })();
 
 var currentActiveTab = 'home';
-
 function navigateTab(tabName) {
   switchMainTabDirect(tabName);
   history.replaceState({ tab: tabName }, '', '#' + tabName);
@@ -328,10 +378,8 @@ function switchMainTabDirect(tabName) {
 
   var targetView = document.getElementById('view-' + tabName);
   if (targetView) targetView.classList.add('active');
-  
   var navBtn = document.getElementById('nav-' + tabName);
   if (navBtn) navBtn.setAttribute('aria-current', 'page');
-
   window.scrollTo(0, 0);
 }
 
@@ -420,10 +468,7 @@ function handleGlobalSearch(query) {
 
 function clearGlobalSearch() {
   var input = document.getElementById('globalSearchInput');
-  if (input) {
-    input.value = '';
-    handleGlobalSearch('');
-  }
+  if (input) { input.value = ''; handleGlobalSearch(''); }
 }
 
 function showSwipeToast() {
@@ -456,44 +501,7 @@ function openDrillModal(drillKey, isNavigating) {
   if (videoBox) {
     var embedUrl = "https://www.youtube.com/embed/" + data.videoId + "?autoplay=1&playsinline=1&rel=0&modestbranding=1" + (isShort ? ("&loop=1&playlist=" + data.videoId) : "");
 
-    var loaderHtml = '<div class="video-loader" id="video-loader">' +
-      '<div class="turf-juggling-arena">' +
-      '<div class="turf-pro-ball">' +
-      '<svg viewBox="0 0 100 100">' +
-      '<circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2.5"/>' +
-      '<polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>' +
-      '<polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#047857"/>' +
-      '<polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>' +
-      '<polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>' +
-      '<polygon points="34,86 50,96 66,86 59,68 41,68" fill="#047857"/>' +
-      '</svg>' +
-      '</div>' +
-      '<div class="turf-ground-shadow"></div>' +
-      '</div>' +
-      '<div class="athletic-loader-title">TRAINING IN PROGRESS<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>' +
-      '</div>' +
-      '<iframe id="active-yt-iframe" src="' + embedUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-
-    videoBox.innerHTML = loaderHtml;
-
-    var iframe = videoBox.querySelector('#active-yt-iframe');
-    
-    function hideLoaderSmoothly() {
-      if (iframe) iframe.classList.add('loaded');
-      var loader = document.getElementById('video-loader');
-      if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(function() { loader.style.display = 'none'; }, 200);
-      }
-    }
-
-    if (iframe) {
-      iframe.addEventListener('load', function() {
-        setTimeout(hideLoaderSmoothly, 250);
-      });
-    }
-
-    loaderTimeoutTimer = setTimeout(hideLoaderSmoothly, 800);
+    videoBox.innerHTML = '<iframe id="active-yt-iframe" src="' + embedUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
   }
 
   var list = document.getElementById('modal-steps');
@@ -551,7 +559,6 @@ function navigatePrevShort() {
 var touchStartX = 0;
 var touchStartY = 0;
 var modalSheet = document.getElementById('modalSheetEl');
-
 if (modalSheet) {
   modalSheet.addEventListener('click', function(e) { e.stopPropagation(); });
   modalSheet.addEventListener('touchstart', function(e) {
@@ -601,55 +608,34 @@ function closeModalInternal() {
   if (floatingNav) floatingNav.classList.remove('visible');
   if (modal) modal.classList.remove('is-short-mode', 'is-masterclass-fullscreen', 'active');
   
+  // Instantly destroy iframe to stop background audio leak
   var box = document.getElementById('video-box');
   if (box) box.innerHTML = '';
+  
   document.removeEventListener('keydown', onModalKeydown);
   popScrollLock();
   if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
 }
 
-var globalSearchInput = document.getElementById('globalSearchInput');
-if (globalSearchInput) {
-  globalSearchInput.addEventListener('input', function(e) { handleGlobalSearch(e.target.value); });
-}
+// Nav Listeners
+document.getElementById('nav-home').addEventListener('click', function() { navigateTab('home'); });
+document.getElementById('nav-classes').addEventListener('click', function() { navigateTab('classes'); });
+document.getElementById('nav-shorts').addEventListener('click', function() { navigateTab('shorts'); });
+document.getElementById('nav-shooting').addEventListener('click', function() { navigateTab('shooting'); });
+document.getElementById('nav-routine').addEventListener('click', function() { navigateTab('routine'); });
 
-var searchClearBtn = document.getElementById('searchClearBtn');
-if (searchClearBtn) {
-  searchClearBtn.addEventListener('click', clearGlobalSearch);
-}
+document.getElementById('modal-save-btn').addEventListener('click', function() { toggleSaveCurrentDrill(); });
+document.getElementById('modal-fs-btn').addEventListener('click', toggleMasterclassFullscreen);
+document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+document.getElementById('fullscreen-exit-btn').addEventListener('click', closeModal);
 
-var navHome = document.getElementById('nav-home');
-if (navHome) navHome.addEventListener('click', function() { navigateTab('home'); });
+document.getElementById('shorts-prev-btn').addEventListener('click', navigatePrevShort);
+document.getElementById('shorts-next-btn').addEventListener('click', navigateNextShort);
+document.getElementById('shorts-save-btn').addEventListener('click', function() { toggleSaveCurrentDrill(); });
 
-var navClasses = document.getElementById('nav-classes');
-if (navClasses) navClasses.addEventListener('click', function() { navigateTab('classes'); });
+document.getElementById('globalSearchInput').addEventListener('input', function(e) { handleGlobalSearch(e.target.value); });
+document.getElementById('searchClearBtn').addEventListener('click', clearGlobalSearch);
 
-var navShorts = document.getElementById('nav-shorts');
-if (navShorts) navShorts.addEventListener('click', function() { navigateTab('shorts'); });
-
-var navShooting = document.getElementById('nav-shooting');
-if (navShooting) navShooting.addEventListener('click', function() { navigateTab('shooting'); });
-
-var modalSaveBtn = document.getElementById('modal-save-btn');
-if (modalSaveBtn) modalSaveBtn.addEventListener('click', toggleSaveCurrentDrill);
-
-var modalFsBtn = document.getElementById('modal-fs-btn');
-if (modalFsBtn) modalFsBtn.addEventListener('click', toggleMasterclassFullscreen);
-
-var modalCloseBtn = document.getElementById('modal-close-btn');
-if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
-
-var fullscreenExitBtn = document.getElementById('fullscreen-exit-btn');
-if (fullscreenExitBtn) fullscreenExitBtn.addEventListener('click', closeModal);
-
-var shortsPrevBtn = document.getElementById('shorts-prev-btn');
-if (shortsPrevBtn) shortsPrevBtn.addEventListener('click', navigatePrevShort);
-
-var shortsNextBtn = document.getElementById('shorts-next-btn');
-if (shortsNextBtn) shortsNextBtn.addEventListener('click', navigateNextShort);
-
-var shortsSaveBtn = document.getElementById('shorts-save-btn');
-if (shortsSaveBtn) shortsSaveBtn.addEventListener('click', toggleSaveCurrentDrill);
-
+initTheme();
 switchMainTabDirect('home');
 setupRealtimeFirestore();
