@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FOOTLY | Master The Pitch</title>
   
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#047857">
+  
   <link rel="preconnect" href="https://www.youtube.com">
   <link rel="preconnect" href="https://i.ytimg.com">
   <link rel="stylesheet" href="style.css">
@@ -36,24 +39,10 @@
 
     <div class="ball-stage" id="ballStage" aria-hidden="true">
       <div class="ball-half half-left">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
-          <polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>
-          <polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
-          <polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>
-          <polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>
-          <polygon points="34,86 50,96 66,86 59,68 41,68" fill="#0f172a"/>
-        </svg>
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/></svg>
       </div>
       <div class="ball-half half-right">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
-          <polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>
-          <polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
-          <polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>
-          <polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>
-          <polygon points="34,86 50,96 66,86 59,68 41,68" fill="#0f172a"/>
-        </svg>
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/></svg>
       </div>
     </div>
 
@@ -68,7 +57,10 @@
   <header class="header">
     <div class="header-top">
       <div class="brand">FOOT<span>LY</span></div>
-      <span class="badge-pill">PRO LAB</span>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="button" id="themeToggleBtn" class="btn-action-round" aria-label="Toggle Theme" title="Toggle Dark/Light Mode">🌙</button>
+        <span class="badge-pill">PRO LAB</span>
+      </div>
     </div>
     <div class="search-box">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
@@ -103,16 +95,22 @@
     <div class="hero-container" id="dynamicHeroContainer">
       <button type="button" class="hero-poster-card" id="heroCardBtn">
         <div class="hero-poster-thumb">
-          <img id="heroPosterImg" src="https://i.ytimg.com/vi/6mFfS1PE3Vo/hqdefault.jpg" alt="Hero Poster">
+          <img id="heroPosterImg" src="" alt="Hero Poster">
         </div>
         <div class="hero-poster-footer">
           <div class="hero-poster-meta">
-            <div class="hero-tag" id="heroCategoryTag">⚡ RECOMMENDED FOR YOU</div>
+            <div class="hero-tag" id="heroCategoryTag">⚡ RECOMMENDED</div>
             <h2 class="hero-title" id="heroMainTitle">Featured Drill</h2>
           </div>
           <span class="btn-play-hero">Watch</span>
         </div>
       </button>
+    </div>
+
+    <!-- SKELETON LOADER CONTAINER -->
+    <div id="skeletonLoaderSection" class="view-reel-container">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
     </div>
 
     <!-- DYNAMIC HOME SECTIONS -->
@@ -137,6 +135,15 @@
     <div class="view-reel-container" id="shoot-feed"></div>
   </div>
 
+  <!-- VIEW 6: MY ROUTINE / WORKOUT BUILDER -->
+  <div id="view-routine" class="app-view">
+    <div class="section-head"><h3>My Custom Training Routine</h3><span>Build Your Playlist</span></div>
+    <div style="padding: 0 18px 12px;">
+      <p style="font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 12px;">Select drills from masterclasses to create your custom daily session.</p>
+      <div id="routineDrillsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+
   <!-- NAVIGATION -->
   <nav class="bottom-nav" aria-label="Primary Navigation">
     <button type="button" class="nav-item" id="nav-home" aria-current="page">
@@ -144,7 +151,7 @@
       <span>Home</span>
     </button>
     <button type="button" class="nav-item" id="nav-classes">
-      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#000" stroke-width="2"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
       <span>Classes</span>
     </button>
     <button type="button" class="nav-item" id="nav-shorts">
@@ -152,8 +159,12 @@
       <span>Shorts</span>
     </button>
     <button type="button" class="nav-item" id="nav-shooting">
-      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="2" r="2"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/></svg>
       <span>Shooting</span>
+    </button>
+    <button type="button" class="nav-item" id="nav-routine">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>Routine</span>
     </button>
   </nav>
 
@@ -188,11 +199,8 @@
   <div class="swipe-nav-toast" id="swipeToast">Swipe ⇄ or Use Buttons to Switch</div>
   <button type="button" id="fullscreen-exit-btn" aria-label="Exit Fullscreen">✕</button>
 
-  <!-- FIREBASE SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  
-  <!-- SCRIPT -->
   <script src="script.js"></script>
 </body>
 </html>
