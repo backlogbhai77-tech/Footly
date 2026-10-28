@@ -1,5 +1,5 @@
 var firebaseConfig = {
-  apiKey: "AIzaSyCsyMAdibDZ2EUgSH2cFgqdqC9bhY-Aygc",
+  apiKey: window.ENV_API_KEY || "AIzaSy_YOUR_ACTUAL_API_KEY_HERE",
   authDomain: "footly-21dd2.firebaseapp.com",
   projectId: "footly-21dd2",
   storageBucket: "footly-21dd2.firebasestorage.app",
@@ -913,7 +913,7 @@ if (fullscreenExitBtn) fullscreenExitBtn.addEventListener('click', closeModal);
 var shortsPrevBtn = document.getElementById('shorts-prev-btn');
 if (shortsPrevBtn) shortsPrevBtn.addEventListener('click', navigatePrevShort);
 
-var shortsNextBtn = document.getElementById('shorts-next-btn');
+var shortsNextBtn = document.getElementById('shorts.next-btn');
 if (shortsNextBtn) shortsNextBtn.addEventListener('click', navigateNextShort);
 
 var shortsSaveBtn = document.getElementById('shorts-save-btn');
