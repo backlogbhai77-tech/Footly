@@ -1,0 +1,15 @@
+{
+  "name": "Footly - Master The Pitch",
+  "short_name": "Footly",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#c4d7cd",
+  "theme_color": "#047857",
+  "icons": [
+    {
+      "src": "https://i.ytimg.com/vi/6mFfS1PE3Vo/hqdefault.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}
