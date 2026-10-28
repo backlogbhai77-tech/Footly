@@ -15,7 +15,6 @@ try {
   console.warn("Firebase Init Error:", e);
 }
 
-// Load cached DB instantly if available
 var cachedData = localStorage.getItem('footly_offline_db');
 var db = cachedData ? JSON.parse(cachedData) : {};
 var allShortKeys = [];
@@ -27,7 +26,6 @@ var loaderTimeoutTimer = null;
 
 var fallbackSvg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22320%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23047857%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23ffffff%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3EFOOTLY%3C%2Ftext%3E%3C%2Fsvg%3E";
 
-// Dark Mode Initialization
 function initTheme() {
   var isDark = localStorage.getItem('footly_dark_mode') === 'true';
   if (isDark) document.body.classList.add('dark-mode');
@@ -70,6 +68,7 @@ function toggleRoutineDrill(drillKey, ev) {
   }
   localStorage.setItem('footly_routine_drills', JSON.stringify(routine));
   renderRoutineView();
+  initFeeds();
   if (navigator.vibrate) navigator.vibrate(25);
 }
 
@@ -111,6 +110,8 @@ function createCard(key, item, isShort, isFullWidth) {
 
   var thumbUrl = 'https://i.ytimg.com/vi/' + item.videoId + '/hqdefault.jpg';
   var pillText = item.tagPill || (isShort ? 'Short' : 'Class');
+  var routineList = getRoutineDrills();
+  var isInRoutine = routineList.indexOf(key) !== -1;
 
   var html = '<div class="reel-thumb">' +
     '<img src="' + thumbUrl + '" alt="' + item.title + '" loading="lazy">' +
@@ -121,7 +122,10 @@ function createCard(key, item, isShort, isFullWidth) {
     '</div>' +
     '<div class="reel-body">' +
     '<h4>' + item.title + '</h4>' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">' +
     '<p>' + (isShort ? 'Watch Drill →' : 'Watch Class →') + '</p>' +
+    '<button type="button" onclick="toggleRoutineDrill(\'' + key + '\', event)" style="background:' + (isInRoutine ? '#047857' : 'var(--card)') + '; color:' + (isInRoutine ? '#fff' : 'var(--text)') + '; border:1px solid var(--border); font-size:9px; font-weight:800; padding:3px 8px; border-radius:6px; cursor:pointer;">' + (isInRoutine ? '✓ In Routine' : '+ Add Routine') + '</button>' +
+    '</div>' +
     '</div>';
 
   btn.innerHTML = html;
@@ -214,7 +218,7 @@ function renderRoutineView() {
 
   var routineKeys = getRoutineDrills();
   if (routineKeys.length === 0) {
-    routineList.innerHTML = '<p style="font-size: 13px; color: var(--muted); padding: 10px 0;">No drills in your routine yet. Add masterclasses here!</p>';
+    routineList.innerHTML = '<p style="font-size: 13px; color: var(--muted); padding: 10px 0;">No drills in your routine yet. Click "+ Add Routine" on any drill to build your session!</p>';
     return;
   }
 
@@ -222,8 +226,8 @@ function renderRoutineView() {
     var item = db[key];
     if (!item) return;
     var row = document.createElement('div');
-    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--surface); padding:10px 14px; border-radius:12px; border:1px solid var(--border);";
-    row.innerHTML = '<div><h4 style="font-size:13px; font-weight:800;">' + item.title + '</h4><p style="font-size:11px; color:var(--accent);">' + item.cat + '</p></div>' +
+    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--surface); padding:10px 14px; border-radius:12px; border:1px solid var(--border); margin-bottom:8px;";
+    row.innerHTML = '<div><h4 style="font-size:13px; font-weight:800; color:var(--text);">' + item.title + '</h4><p style="font-size:11px; color:var(--accent); font-weight:700;">' + item.cat + '</p></div>' +
       '<button type="button" onclick="toggleRoutineDrill(\'' + key + '\')" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:8px; font-weight:900; font-size:11px; cursor:pointer;">Remove</button>';
     routineList.appendChild(row);
   });
@@ -292,7 +296,7 @@ function setupRealtimeFirestore() {
       updateHeroDisplay(latestMasterclass);
     }
   }, function(err) {
-    console.warn("Firestore sync error, using cache:", err);
+    console.warn("Firestore sync error:", err);
     if (Object.keys(db).length > 0) initFeeds();
   });
 }
@@ -480,6 +484,7 @@ function showSwipeToast() {
   setTimeout(function() { toast.style.display = 'none'; }, 1800);
 }
 
+// RESTORED TURF LOADER & SMOOTH VIDEO PLAYER
 function openDrillModal(drillKey, isNavigating) {
   if (isNavigating === undefined) isNavigating = false;
   var data = db[drillKey];
@@ -501,7 +506,40 @@ function openDrillModal(drillKey, isNavigating) {
   if (videoBox) {
     var embedUrl = "https://www.youtube.com/embed/" + data.videoId + "?autoplay=1&playsinline=1&rel=0&modestbranding=1" + (isShort ? ("&loop=1&playlist=" + data.videoId) : "");
 
-    videoBox.innerHTML = '<iframe id="active-yt-iframe" src="' + embedUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+    var loaderHtml = '<div class="video-loader" id="video-loader">' +
+      '<div class="turf-juggling-arena">' +
+      '<div class="turf-pro-ball">' +
+      '<svg viewBox="0 0 100 100">' +
+      '<circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2.5"/>' +
+      '<polygon points="50,32 64,42 59,58 41,58 36,42" fill="#0f172a"/>' +
+      '<polygon points="50,4 34,14 36,32 50,22 64,32 66,14" fill="#047857"/>' +
+      '<polygon points="8,38 20,48 16,66 2,66 0,48" fill="#0f172a"/>' +
+      '<polygon points="92,38 100,48 98,66 84,66 80,48" fill="#0f172a"/>' +
+      '<polygon points="34,86 50,96 66,86 59,68 41,68" fill="#047857"/>' +
+      '</svg>' +
+      '</div>' +
+      '<div class="turf-ground-shadow"></div>' +
+      '</div>' +
+      '<div class="athletic-loader-title">TRAINING IN PROGRESS<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>' +
+      '</div>' +
+      '<iframe id="active-yt-iframe" src="' + embedUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+
+    videoBox.innerHTML = loaderHtml;
+
+    var iframe = videoBox.querySelector('#active-yt-iframe');
+    function hideLoaderSmoothly() {
+      if (iframe) iframe.classList.add('loaded');
+      var loader = document.getElementById('video-loader');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(function() { loader.style.display = 'none'; }, 200);
+      }
+    }
+
+    if (iframe) {
+      iframe.addEventListener('load', function() { setTimeout(hideLoaderSmoothly, 250); });
+    }
+    loaderTimeoutTimer = setTimeout(hideLoaderSmoothly, 800);
   }
 
   var list = document.getElementById('modal-steps');
@@ -608,7 +646,6 @@ function closeModalInternal() {
   if (floatingNav) floatingNav.classList.remove('visible');
   if (modal) modal.classList.remove('is-short-mode', 'is-masterclass-fullscreen', 'active');
   
-  // Instantly destroy iframe to stop background audio leak
   var box = document.getElementById('video-box');
   if (box) box.innerHTML = '';
   
@@ -620,7 +657,8 @@ function closeModalInternal() {
 // Nav Listeners
 document.getElementById('nav-home').addEventListener('click', function() { navigateTab('home'); });
 document.getElementById('nav-classes').addEventListener('click', function() { navigateTab('classes'); });
-document.getElementById('nav-shorts').addEventListener('click', function() { navigateTab('shorts'); });
+navShorts = document.getElementById('nav-shorts');
+if (navShorts) navShorts.addEventListener('click', function() { navigateTab('shorts'); });
 document.getElementById('nav-shooting').addEventListener('click', function() { navigateTab('shooting'); });
 document.getElementById('nav-routine').addEventListener('click', function() { navigateTab('routine'); });
 
