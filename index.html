@@ -188,116 +188,11 @@
   <div class="swipe-nav-toast" id="swipeToast">Swipe ⇄ or Use Buttons to Switch</div>
   <button type="button" id="fullscreen-exit-btn" aria-label="Exit Fullscreen">✕</button>
 
-  <!-- SECURE TABBED ADMIN HUB -->
-  <div class="admin-modal" id="adminModal">
-    <div class="admin-card">
-      
-      <!-- 1. LOGIN SCREEN -->
-      <div id="adminAuthSection">
-        <div class="admin-header-badge">
-          <div class="admin-title-text">FOOT<span>LY</span> ADMIN</div>
-          <span class="badge-pill">SECURE LOCK</span>
-        </div>
-        <p style="font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600;">Enter admin credentials to authenticate.</p>
-        
-        <div class="admin-form-group">
-          <label>Admin Email</label>
-          <input type="email" id="admEmail" placeholder="admin@footly.com" autocomplete="off">
-        </div>
-
-        <div class="admin-form-group">
-          <label>Password</label>
-          <input type="password" id="admPass" placeholder="••••••••" autocomplete="off">
-        </div>
-
-        <div class="admin-btn-row">
-          <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Cancel</button>
-          <button type="button" class="btn-admin-submit" id="admLoginBtn">Sign In</button>
-        </div>
-      </div>
-
-      <!-- 2. TABBED DASHBOARD -->
-      <div id="adminDashboardSection" style="display: none;">
-        <div class="admin-header-badge">
-          <div class="admin-title-text">FOOT<span>LY</span> HUB</div>
-          <button type="button" onclick="handleAdminSignOut()" style="background:none; border:none; color:#ef4444; font-size:11px; font-weight:900; cursor:pointer; text-transform:uppercase;">Sign Out ✕</button>
-        </div>
-
-        <!-- TABS NAV -->
-        <div class="admin-nav-chips">
-          <button type="button" class="adm-tab-chip active" data-tab="single">⚡ Add Drill</button>
-          <button type="button" class="adm-tab-chip" data-tab="bulk">📦 Bulk Upload</button>
-          <button type="button" class="adm-tab-chip" data-tab="manage">🗑️ Manage</button>
-        </div>
-
-        <!-- TAB 1: SINGLE DRILL -->
-        <div id="admTab-single" class="admin-tab-view active">
-          <div class="admin-form-group">
-            <label>YouTube Link or Video ID</label>
-            <input type="text" id="admVideoUrl" placeholder="https://youtu.be/... or ID">
-          </div>
-
-          <div class="admin-form-group">
-            <label>Drill Title</label>
-            <input type="text" id="admTitle" placeholder="e.g. Cristiano Knuckleball 2.0">
-          </div>
-
-          <div class="admin-form-group">
-            <label>Custom Category</label>
-            <input type="text" id="admCat" placeholder="e.g. Shooting, Skills, Dribbling...">
-          </div>
-
-          <div class="admin-form-group">
-            <label>Type</label>
-            <select id="admType">
-              <option value="short">Shorts (Vertical)</option>
-              <option value="masterclass">Masterclass (Full Video)</option>
-            </select>
-          </div>
-
-          <div class="admin-form-group">
-            <label>Badge Tag</label>
-            <input type="text" id="admTagPill" placeholder="e.g. POWER, PRO, 1v1">
-          </div>
-
-          <div class="admin-btn-row">
-            <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Close</button>
-            <button type="button" class="btn-admin-submit" id="admSubmitBtn">Publish to Cloud</button>
-          </div>
-        </div>
-
-        <!-- TAB 2: BULK UPLOAD -->
-        <div id="admTab-bulk" class="admin-tab-view">
-          <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px; font-weight: 600;">
-            Paste 1 line per video: Link | Title | Category | Type
-          </p>
-          <div class="admin-form-group">
-            <textarea id="admBulkText" placeholder="https://youtu.be/xxx | Knuckleball Pro | Shooting | masterclass&#10;https://youtube.com/shorts/yyy | Elastico Quick | Skills | short"></textarea>
-          </div>
-          <div class="admin-btn-row">
-            <button type="button" class="btn-admin-cancel" onclick="closeAdminModal()">Close</button>
-            <button type="button" class="btn-admin-submit" id="admBulkSubmitBtn">Push All to Cloud</button>
-          </div>
-        </div>
-
-        <!-- TAB 3: MANAGE & SEARCH DELETE -->
-        <div id="admTab-manage" class="admin-tab-view">
-          <input type="text" id="adminSearchQuery" class="admin-search-input" placeholder="🔍 Search drills to delete...">
-          <div class="admin-items-list" id="adminDrillsList"></div>
-          <div class="admin-btn-row">
-            <button type="button" class="btn-admin-cancel" style="width: 100%;" onclick="closeAdminModal()">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FIREBASE SCRIPTS -->
+  <!-- FIREBASE SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-  <!-- CUSTOM JAVASCRIPT -->
+  
+  <!-- SCRIPT -->
   <script src="script.js"></script>
 </body>
 </html>
